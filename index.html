@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Maison Informatique Bujumbura - Rapport</title>
+
+<style>
+body{
+    font-family: Arial;
+    background:#f1f1f1;
+    padding:20px;
+}
+
+.container{
+    max-width:500px;
+    margin:auto;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+}
+
+h2{
+    text-align:center;
+}
+
+input, select, button{
+    width:100%;
+    padding:12px;
+    margin:6px 0;
+    font-size:16px;
+}
+
+button{
+    background:green;
+    color:white;
+    border:none;
+    border-radius:5px;
+}
+
+.print{
+    background:blue;
+}
+
+.delete{
+    background:red;
+}
+
+.rapport{
+    background:#eee;
+    padding:15px;
+    margin-top:15px;
+}
+</style>
+
+</head>
+
+<body>
+  <body>
+
+<h1>Application igufasha kudandaza canke guharura ivyinjiye canke ibisohoka</h1>
+
+<p>Ikaze kuri application yacu</p>
+
+<a href="rapport.html">
+<button>Raba Rapport</button>
+</a>
+
+  </body>
+
+<div class="container">
+
+<h2>Maison Informatique Bujumbura</h2>
+
+<p>Gestion y'amafaranga</p>
+
+<input id="nom" placeholder="Izina ry'igikorwa">
+
+<input id="montant" type="number" placeholder="Amafaranga">
+
+<select id="type">
+<option value="in">Amafaranga yinjiye</option>
+<option value="out">Amafaranga yasohotse</option>
+</select>
+
+<button onclick="save()">Bika amafaranga</button>
+
+
+<div class="rapport" id="rapport">
+</div>
+
+
+<button class="print" onclick="printRapport()">
+Imprimer / Bika PDF
+</button>
+
+
+<button class="delete" onclick="clearData()">
+Siba vyose
+</button>
+
+
+</div>
+
+
+<script>
+
+let data = JSON.parse(localStorage.getItem("rapport")) || [];
+
+
+function save(){
+
+let nom=document.getElementById("nom").value;
+let montant=Number(document.getElementById("montant").value);
+let type=document.getElementById("type").value;
+
+
+if(nom=="" || montant==""){
+alert("Shiramwo amakuru yose");
+return;
+}
+
+
+data.push({
+nom:nom,
+montant:montant,
+type:type,
+date:new Date().toLocaleDateString()
+});
+
+
+localStorage.setItem("rapport",JSON.stringify(data));
+
+
+document.getElementById("nom").value="";
+document.getElementById("montant").value="";
+
+
+show();
+
+}
+
+
+
+function show(){
+
+let yinjiye=0;
+let yasohotse=0;
+let texte="";
+
+
+data.forEach(function(item){
+
+if(item.type=="in"){
+yinjiye += item.montant;
+}else{
+yasohotse += item.montant;
+}
+
+
+texte += 
+item.date+" - "+
+item.nom+" : "+
+item.montant+
+"<br>";
+
+});
+
+
+let asigaye=yinjiye-yasohotse;
+
+
+document.getElementById("rapport").innerHTML=
+
+"<h3>Rapport</h3>"+
+texte+
+"<hr>"+
+"Yinjiye: "+yinjiye+
+"<br>Yasohotse: "+yasohotse+
+"<br>Hasigaye: "+asigaye;
+
+
+}
+
+
+
+function clearData(){
+
+localStorage.removeItem("rapport");
+
+data=[];
+
+show();
+
+}
+
+
+
+function printRapport(){
+
+window.print();
+
+}
+
+
+
+show();
+
+</script>
+
+
+</body>
+</html>
