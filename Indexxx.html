@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="rn">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Application jean claude niyongabo</title>
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    background:#f2f2f2;
+    margin:0;
+}
+
+header{
+    background:green;
+    color:white;
+    text-align:center;
+    padding:20px;
+}
+
+.container{
+    padding:15px;
+}
+
+.card{
+    background:white;
+    padding:15px;
+    margin-bottom:15px;
+    border-radius:10px;
+    box-shadow:0 0 5px gray;
+}
+
+input,button{
+    width:100%;
+    padding:12px;
+    margin-top:8px;
+}
+
+button{
+    background:green;
+    color:white;
+    border:none;
+    border-radius:5px;
+    font-size:16px;
+}
+
+.result{
+    font-size:18px;
+    font-weight:bold;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+<h2>Application yogufasha guharura ivyinjira ibisohoka na cotisation yaba membre</h2>
+
+<p>Gestion Stock y'Uburo na Finance</p>
+
+</header>
+
+
+
+<div class="container">
+
+
+<div class="card">
+
+<h3>Entrée y'Uburo</h3>
+
+
+<label>Kg zinjiye:</label>
+
+<input type="number" id="kgEntree">
+
+
+<label>Amafaranga yaranguweko:</label>
+
+<input type="number" id="achat">
+
+
+<button onclick="ajouterEntree()">
+
+Bika Entrée
+
+</button>
+
+
+</div>
+
+
+
+<div class="card">
+
+<h3>Stock</h3>
+
+
+<p class="result">
+
+Uburo buriho:
+
+<span id="stock">0</span> Kg
+
+</p>
+
+
+
+<p class="result">
+
+Amafaranga yaranguwe:
+
+<span id="totalAchat">0</span> Fbu
+
+</p>
+
+
+</div>
+
+
+
+</div>
+
+
+
+<!-- NTUSHIRE HANO SCRIPT. 
+Tuzoyishira rimwe gusa ku mpera ya 4/4 --><!-- VENTE Y'UBURO -->
+
+<div class="card">
+
+<h3>Kugurisha Uburo</h3>
+
+
+<label>Kg zagurishijwe:</label>
+
+<input type="number" id="kgVente">
+
+
+<label>Amafaranga yagurishijweko:</label>
+
+<input type="number" id="amafarangaVente">
+
+
+<button onclick="venderUburo()">
+
+Bika Vente
+
+</button>
+
+
+</div>
+
+
+
+<div class="card">
+
+<h3>Ubucuruzi</h3>
+
+
+<p class="result">
+
+Amafaranga yinjiye:
+
+<span id="totalVente">0</span> Fbu
+
+</p>
+
+
+</div>
+<!-- COTISATION -->
+
+<div class="card">
+
+<h3>Cotisation z'Abanyamuryango</h3>
+
+
+<label>Izina ry'umuntu:</label>
+
+<input type="text" id="nomMembre">
+
+
+<label>Amafaranga yatanze:</label>
+
+<input type="number" id="amafarangaCotisation">
+
+
+<button onclick="bikaCotisation()">
+
+Bika Cotisation
+
+</button>
+
+
+</div>
+
+
+
+
+<!-- DEPENSE -->
+
+<div class="card">
+
+<h3>Dépenses</h3>
+
+
+<label>Impamvu:</label>
+
+<input type="text" id="impamvuDepense">
+
+
+<label>Amafaranga yasohotse:</label>
+
+<input type="number" id="amafarangaDepense">
+
+
+<button onclick="bikaDepense()">
+
+Bika Dépense
+
+</button>
+
+
+</div>
+
+
+
+
+<!-- IKIGEGA -->
+
+<div class="card">
+
+<h3>Ikigega</h3>
+
+
+<p class="result">
+
+Cotisation:
+
+<span id="totalCotisation">0</span> Fbu
+
+</p>
+
+
+
+<p class="result">
+
+Dépenses:
+
+<span id="totalDepense">0</span> Fbu
+
+</p>
+
+
+
+<p class="result">
+
+Amafaranga ari mu kigega:
+
+<span id="caisse">0</span> Fbu
+
+</p>
+
+
+</div>
+<!-- RAPPORT -->
+
+<div class="card">
+
+<h3>Rapport ya Fondation</h3>
+
+
+<button onclick="generateRapport()">
+
+Raba Rapport
+
+</button>
+
+
+<button onclick="imprimerRapport()">
+
+Sohora PDF
+
+</button>
+
+
+<div id="rapport"></div>
+
+
+</div>
+
+
+
+<script>
+
+
+// =====================
+// AMAKURU ABIKWA
+// =====================
+
+
+let stock = Number(localStorage.getItem("stock")) || 0;
+
+let totalAchat = Number(localStorage.getItem("totalAchat")) || 0;
+
+let totalVente = Number(localStorage.getItem("totalVente")) || 0;
+
+let totalCotisation = Number(localStorage.getItem("totalCotisation")) || 0;
+
+let totalDepense = Number(localStorage.getItem("totalDepense")) || 0;
+
+
+
+document.getElementById("stock").innerHTML = stock;
+
+document.getElementById("totalAchat").innerHTML = totalAchat;
+
+document.getElementById("totalVente").innerHTML = totalVente;
+
+
+
+
+
+// =====================
+// ENTREE Y'UBURO
+// =====================
+
+
+function ajouterEntree(){
+
+
+let kg = Number(document.getElementById("kgEntree").value);
+
+let amafaranga = Number(document.getElementById("achat").value);
+
+
+
+if(kg<=0 || amafaranga<=0){
+
+alert("Shiramwo amakuru neza");
+
+return;
+
+}
+
+
+
+stock = stock + kg;
+
+totalAchat = totalAchat + amafaranga;
+
+
+
+localStorage.setItem("stock",stock);
+
+localStorage.setItem("totalAchat",totalAchat);
+
+
+
+document.getElementById("stock").innerHTML = stock;
+
+document.getElementById("totalAchat").innerHTML = totalAchat;
+
+
+alert("Entrée yabitswe neza");
+
+}
+
+
+
+
+// =====================
+// VENTE
+// =====================
+
+
+function venderUburo(){
+
+
+let kg = Number(document.getElementById("kgVente").value);
+
+let amafaranga = Number(document.getElementById("amafarangaVente").value);
+
+
+
+if(kg<=0 || amafaranga<=0){
+
+alert("Shiramwo amakuru neza");
+
+return;
+
+}
+
+
+
+if(kg > stock){
+
+alert("Stock ntihagije");
+
+return;
+
+}
+
+
+
+stock = stock - kg;
+
+
+totalVente = totalVente + amafaranga;
+
+
+
+localStorage.setItem("stock",stock);
+
+localStorage.setItem("totalVente",totalVente);
+
+
+
+document.getElementById("stock").innerHTML = stock;
+
+document.getElementById("totalVente").innerHTML = totalVente;
+
+
+
+alert("Vente yabitswe neza");
+
+
+}
+
+
+
+
+// =====================
+// COTISATION
+// =====================
+
+
+function bikaCotisation(){
+
+
+let nom = document.getElementById("nomMembre").value;
+
+let amafaranga = Number(document.getElementById("amafarangaCotisation").value);
+
+
+
+if(nom=="" || amafaranga<=0){
+
+alert("Shiramwo amakuru neza");
+
+return;
+
+}
+
+
+
+totalCotisation = totalCotisation + amafaranga;
+
+
+localStorage.setItem("totalCotisation",totalCotisation);
+
+
+document.getElementById("totalCotisation").innerHTML = totalCotisation;
+
+
+alert("Cotisation yabitswe neza");
+
+}
+
+
+
+
+// =====================
+// DEPENSE
+// =====================
+
+
+function bikaDepense(){
+
+
+let impamvu = document.getElementById("impamvuDepense").value;
+
+let amafaranga = Number(document.getElementById("amafarangaDepense").value);
+
+
+
+if(impamvu=="" || amafaranga<=0){
+
+alert("Shiramwo amakuru neza");
+
+return;
+
+}
+
+
+
+totalDepense = totalDepense + amafaranga;
+
+
+
+localStorage.setItem("totalDepense",totalDepense);
+
+
+
+document.getElementById("totalDepense").innerHTML = totalDepense;
+
+
+
+alert("Dépense yabitswe neza");
+
+}
+
+
+
+
+// =====================
+// IKIGEGA
+// =====================
+
+
+function calculCaisse(){
+
+
+let caisse =
+
+totalVente
+
++
+
+totalCotisation
+
+-
+
+totalDepense;
+
+
+
+document.getElementById("caisse").innerHTML = caisse;
+
+
+}
+
+
+
+setInterval(calculCaisse,1000);
+
+
+
+
+// =====================
+// RAPPORT
+// =====================
+
+
+function generateRapport(){
+
+
+let itariki = new Date().toLocaleDateString();
+
+
+let caisse = totalVente + totalCotisation - totalDepense;
+
+
+
+document.getElementById("rapport").innerHTML =
+
+"<h3>Fondation Elie Baregensabe</h3>"+
+
+"<p>Itariki: "+itariki+"</p>"+
+
+"<p>Uburo busigaye: "+stock+" Kg</p>"+
+
+"<p>Amafaranga yaranguweko: "+totalAchat+" Fbu</p>"+
+
+"<p>Amafaranga yagurishijwe: "+totalVente+" Fbu</p>"+
+
+"<p>Cotisation: "+totalCotisation+" Fbu</p>"+
+
+"<p>Dépenses: "+totalDepense+" Fbu</p>"+
+
+"<h3>Ikigega: "+caisse+" Fbu</h3>";
+
+
+
+}
+
+
+
+
+function imprimerRapport(){
+
+
+let contenu = document.getElementById("rapport").innerHTML;
+
+
+if(contenu==""){
+
+alert("Banza ukore Rapport");
+
+return;
+
+}
+
+
+
+let page = window.open("","","width=800,height=600");
+
+
+page.document.write(contenu);
+
+
+page.document.close();
+
+
+page.print();
+
+
+}
+
+  // ======================
+// ABANYAMURYANGO
+// ======================
+
+
+let membres = JSON.parse(localStorage.getItem("membres")) || [];
+
+
+
+function ongeraMembre(){
+
+
+let izina = document.getElementById("izinaMembre").value;
+
+let telephone = document.getElementById("telephoneMembre").value;
+
+
+
+if(izina==""){
+
+alert("Andika izina");
+
+return;
+
+}
+
+
+
+let membre = {
+
+nom: izina,
+
+tel: telephone,
+
+cotisation: []
+
+};
+
+
+
+membres.push(membre);
+
+
+
+localStorage.setItem("membres", JSON.stringify(membres));
+
+
+
+document.getElementById("izinaMembre").value="";
+
+document.getElementById("telephoneMembre").value="";
+
+
+
+erekanaMembres();
+
+
+alert("Umunyamuryango yongewe");
+
+
+}
+
+
+
+
+function erekanaMembres(){
+
+
+let liste = document.getElementById("listeMembres");
+
+
+liste.innerHTML="";
+
+
+
+membres.forEach(function(membre,index){
+
+
+liste.innerHTML +=
+
+"<p>"+
+
+(index+1)+". "+
+
+membre.nom+
+
+" - "+
+
+membre.tel+
+
+"</p>";
+
+
+});
+
+
+}
+
+
+
+erekanaMembres();
+  // ==========================
+// COTISATION Z'ABANYAMURYANGO
+// ==========================
+
+
+function llenyaMembres(){
+
+
+let select = document.getElementById("selectMembre");
+
+
+select.innerHTML="";
+
+
+
+membres.forEach(function(membre,index){
+
+
+select.innerHTML +=
+
+"<option value='"+index+"'>"+
+
+membre.nom+
+
+"</option>";
+
+
+});
+
+
+}
+
+
+
+
+function bikaKwishura(){
+
+
+let index = document.getElementById("selectMembre").value;
+
+
+let ukwezi = document.getElementById("ukwezi").value;
+
+
+let amafaranga = Number(document.getElementById("amafarangaYishuye").value);
+
+
+
+if(ukwezi=="" || amafaranga<=0){
+
+alert("Shiramwo ukwezi n'amafaranga");
+
+return;
+
+}
+
+
+
+membres[index].cotisation.push({
+
+ukwezi:ukwezi,
+
+amafaranga:amafaranga
+
+});
+
+
+
+localStorage.setItem(
+
+"membres",
+
+JSON.stringify(membres)
+
+);
+
+
+
+erekanaKwishura();
+
+
+
+alert("Kwishura kwabitswe neza");
+
+
+}
+
+
+
+
+function erekanaKwishura(){
+
+
+let bishuye = document.getElementById("abishuye");
+
+let batarishuye = document.getElementById("abatarishuye");
+
+
+
+bishuye.innerHTML="";
+
+batarishuye.innerHTML="";
+
+
+
+membres.forEach(function(membre){
+
+
+
+if(membre.cotisation.length > 0){
+
+
+bishuye.innerHTML +=
+
+"<p>✅ "+membre.nom+
+
+" yarishuye</p>";
+
+
+}
+
+else{
+
+
+batarishuye.innerHTML +=
+
+"<p>❌ "+membre.nom+
+
+" ntarariha</p>";
+
+
+}
+
+
+});
+
+
+}
+
+
+
+llenyaMembres();
+
+erekanaKwishura();
+  // ==========================
+// RAPPORT Y'UKWEZI
+// ==========================
+
+
+function rapportUkwezi(){
+
+
+let totalAbishuye = 0;
+
+let totalMembres = membres.length;
+
+
+
+membres.forEach(function(membre){
+
+
+if(membre.cotisation.length > 0){
+
+totalAbishuye++;
+
+}
+
+});
+
+
+
+let caisse =
+
+(Number(totalVente)||0)
+
++
+
+(Number(totalCotisation)||0)
+
+-
+
+(Number(totalDepense)||0);
+
+
+
+
+let rapport =
+
+
+"<h3>Fondation Elie Baregensabe</h3>"+
+
+"<p>Abanyamuryango bose: "+totalMembres+"</p>"+
+
+"<p>Abishuye: "+totalAbishuye+"</p>"+
+
+"<p>Abatarishura: "+
+
+(totalMembres-totalAbishuye)
+
++"</p>"+
+
+"<hr>"+
+
+"<p>Uburo busigaye: "+stock+" Kg</p>"+
+
+"<p>Amafaranga yagurishijwe: "+totalVente+" Fbu</p>"+
+
+"<p>Cotisation zose: "+totalCotisation+" Fbu</p>"+
+
+"<p>Dépenses: "+totalDepense+" Fbu</p>"+
+
+"<h3>Ikigega: "+caisse+" Fbu</h3>";
+
+
+
+document.getElementById("rapportUkwezi").innerHTML = rapport;
+
+
+ }
+  // ==========================
+// INDIMI
+// ==========================
+
+
+let ururimi = localStorage.getItem("ururimi") || "rn";
+
+
+
+function hinduraUrurimi(lang){
+
+
+ururimi = lang;
+
+
+localStorage.setItem("ururimi",lang);
+
+
+
+if(lang=="fr"){
+
+
+document.querySelector("h2").innerHTML="Fondation Elie Baregensabe";
+
+document.querySelector("p").innerHTML="Gestion du stock et finances";
+
+
+}
+
+
+else if(lang=="en"){
+
+
+document.querySelector("h2").innerHTML="Elie Baregensabe Foundation";
+
+document.querySelector("p").innerHTML="Stock and Finance Management";
+
+
+}
+
+
+else if(lang=="sw"){
+
+
+document.querySelector("h2").innerHTML="Fondation Elie Baregensabe";
+
+document.querySelector("p").innerHTML="Usimamizi wa stoo na fedha";
+
+
+}
+
+
+else{
+
+
+document.querySelector("h2").innerHTML="Fondation Elie Baregensabe";
+
+document.querySelector("p").innerHTML="Gestion Stock y'Uburo na Finance";
+
+
+}
+
+
+}
+
+  // =====================
+// LOGIN ROLE
+// =====================
+
+
+function login(){
+
+
+let role = document.getElementById("role").value;
+
+let password = document.getElementById("password").value;
+
+
+
+let adminPassword = "1234";
+
+
+
+if(role=="admin"){
+
+
+if(password != adminPassword){
+
+alert("Mot de passe siyo");
+
+return;
+
+}
+
+
+document.getElementById("loginBox").style.display="none";
+
+
+document.getElementById("logoutBtn").style.display="block";
+
+
+
+alert("Ugiye nk'umudandaza");
+
+
+}
+
+
+
+else{
+
+
+document.getElementById("loginBox").style.display="none";
+
+
+document.getElementById("logoutBtn").style.display="block";
+
+
+
+// guhisha ibice vyo guhindura amakuru
+
+document.querySelectorAll(".card").forEach(function(card){
+
+
+if(
+card.innerHTML.includes("Entrée") ||
+card.innerHTML.includes("Vente") ||
+card.innerHTML.includes("Cotisation") ||
+card.innerHTML.includes("Dépenses")
+){
+
+card.style.display="none";
+
+}
+
+
+});
+
+
+
+alert("Ugiye nk'umureba");
+
+
+}
+
+
+
+}
+
+
+
+function logout(){
+
+
+location.reload();
+
+
+}
+
+</script>
+
+
+
+</body>
+
+</html>
