@@ -1,0 +1,1001 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#075e54">
+<title>Dialogue - Messages</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+:root{--g:#075e54;--l:#128c7e;--bg:#efeae2}
+body{margin:0;font:15px Arial,sans-serif;color:#222;background:#fff}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}
+header{height:56px;background:var(--g);color:white;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
+.brand{font-size:21px;font-weight:bold}
+header button{border:0;background:none;color:white;font-size:23px}
+#auth{padding:24px;max-width:440px;margin:auto}
+#auth h2{color:var(--g)}
+#auth input{width:100%;padding:14px;margin:7px 0;border:1px solid #ddd;border-radius:9px}
+.primary{width:100%;padding:13px;margin-top:8px;background:var(--g);color:white;border:0;border-radius:9px}
+#authMsg{white-space:pre-wrap;color:#b00020;font-size:13px}
+#app{display:none}
+#menu{display:none;padding:6px;border-bottom:1px solid #ddd}
+#menu button{display:block;width:100%;padding:12px;text-align:left;background:white;border:0}
+.search{padding:9px;border-bottom:1px solid #eee}
+.search input{width:100%;padding:12px;border:0;border-radius:22px;background:#f0f2f5;outline:none}
+.tabs{display:flex;border-bottom:1px solid #ddd}
+.tabs button{flex:1;padding:12px 2px;border:0;background:white;color:#555}
+.tabs button.active{color:var(--g);border-bottom:3px solid var(--g)}
+#layout{display:flex;height:calc(100dvh - 145px);min-height:300px}
+#people{width:100%;overflow:auto}
+.person{display:flex;align-items:center;gap:11px;padding:12px;border-bottom:1px solid #eee;min-height:70px;cursor:pointer}
+.person:hover{background:#f7f7f7}
+.avatar{width:45px;height:45px;flex-shrink:0;border-radius:50%;background:#d8eee8;color:var(--g);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold}
+.info{min-width:0;flex:1}
+.info strong{display:block;margin-bottom:5px;overflow-wrap:anywhere}
+.info small{display:block;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#chat{display:none;flex-direction:column;width:100%;min-width:0;min-height:0}
+.chathead{display:flex;align-items:center;gap:9px;padding:7px;background:#f7f7f7;border-bottom:1px solid #ddd}
+.chathead button{border:0;background:none;font-size:24px}
+#messages{flex:1;min-height:0;overflow-y:auto;padding:12px;background:var(--bg);display:flex;flex-direction:column;gap:7px}
+.bubble{position:relative;max-width:88%;padding:9px 10px;background:white;align-self:flex-start;border-radius:9px;overflow-wrap:anywhere;white-space:pre-wrap;box-shadow:0 1px 1px #0001}
+.bubble.mine{align-self:flex-end;background:#d9fdd3}
+.bubble time{display:block;text-align:right;color:#777;font-size:10px;margin-top:5px}
+.bubble a{color:#075e54;overflow-wrap:anywhere}
+.bubble img,.bubble video{display:block;max-width:100%;max-height:300px;border-radius:7px}
+.bubble audio{display:block;width:230px;max-width:100%}
+.receipt{color:#128cce;margin-left:5px}
+.replyquote{background:#0000000c;border-left:3px solid #128c7e;padding:5px;margin-bottom:6px;font-size:12px}
+.msgtools{display:flex;justify-content:flex-end;gap:8px;margin-top:5px}
+.msgtools button{border:0;background:#ffffff90;border-radius:8px;padding:4px 7px;font-size:12px}
+#composer{flex-shrink:0;background:#f7f7f7;padding:5px 7px calc(5px + env(safe-area-inset-bottom))}
+#extraTools{display:flex;align-items:center;gap:7px;padding:3px 0 7px;overflow-x:auto}
+#extraTools button{flex:0 0 39px;width:39px;height:39px;border:0;border-radius:50%;background:#e5f3ef;font-size:21px}
+#sendbar{display:flex;align-items:flex-end;gap:7px;margin:0;width:100%}
+#messageInput{flex:1;width:0;min-width:0;min-height:46px;max-height:120px;resize:none;overflow:auto;border:1px solid #ddd;outline:none;background:white;border-radius:23px;padding:13px 15px;font-size:16px;line-height:20px}
+#sendBtn{flex:0 0 46px;width:46px;height:46px;border:0;border-radius:50%;background:var(--g);color:white;font-size:22px}
+#emojiPanel{display:flex;flex-wrap:wrap;gap:5px;padding:7px 0}
+#emojiPanel button{border:0;background:white;border-radius:8px;padding:6px;font-size:23px}
+[hidden]{display:none!important}
+#replyBox{display:flex;align-items:center;justify-content:space-between;background:#e5f3ef;padding:7px;margin-bottom:5px;border-left:3px solid var(--l)}
+#replyBox button{border:0;background:none}
+.notice,.empty{padding:20px;text-align:center;color:#777;font-size:13px;white-space:pre-wrap}
+#status{color:#777;font-size:12px;padding:5px 10px}
+@media(min-width:650px){
+ #layout{height:calc(100dvh - 145px)}
+ #people{width:36%;max-width:380px;border-right:1px solid #ddd}
+ #chat{display:flex;flex:1}
+ #backBtn{display:none!important}
+}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand">● Dialogue</div>
+ <button id="menuBtn" aria-label="Menu">⋮</button>
+</header>
+
+<section id="auth">
+ <h2>Bienvenue sur Dialogue</h2>
+ <p>Connectez-vous ou créez votre compte.</p>
+ <input id="email" type="email" placeholder="Adresse email" autocomplete="email">
+ <input id="password" type="password" placeholder="Mot de passe (6 caractères minimum)" autocomplete="current-password">
+ <button class="primary" id="loginBtn">Se connecter</button>
+ <button class="primary" id="signupBtn" style="background:#128c7e">Créer un compte</button>
+ <p id="authMsg"></p>
+</section>
+
+<section id="app">
+ <div id="menu">
+  <button id="profileBtn">Mon profil</button>
+  <button id="refreshBtn">Actualiser</button>
+  <button id="logoutBtn">Déconnexion</button>
+ </div>
+ <div class="search"><input id="searchInput" placeholder="Rechercher un contact..."></div>
+ <div class="tabs">
+  <button class="active" data-tab="chats">Discussions</button>
+  <button data-tab="contacts">Contacts</button>
+  <button data-tab="groups">Groupes</button>
+ </div>
+ <div id="layout">
+  <section id="people">
+   <div id="status">Connexion...</div>
+   <div id="peopleList"></div>
+  </section>
+  <section id="chat">
+   <div class="chathead">
+    <button id="backBtn" type="button">‹</button>
+    <div class="avatar" id="chatAvatar">D</div>
+    <div class="info"><strong id="chatname">Dialogue</strong><small id="chatstatus">Messagerie</small></div>
+   </div>
+   <div id="messages"><div class="empty">Choisissez une discussion.</div></div>
+
+   <div id="composer">
+    <div id="replyBox" hidden>
+     <span id="replyText"></span>
+     <button id="cancelReply" type="button">✕</button>
+    </div>
+    <div id="emojiPanel" hidden>
+     <button type="button">😀</button><button type="button">😂</button>
+     <button type="button">🥰</button><button type="button">😍</button>
+     <button type="button">👍</button><button type="button">❤️</button>
+     <button type="button">🙏</button><button type="button">😭</button>
+     <button type="button">🔥</button><button type="button">🎉</button>
+     <button type="button">😎</button><button type="button">😊</button>
+     <button type="button">👏</button><button type="button">💯</button>
+     <button type="button">🤝</button><button type="button">👋</button>
+    </div>
+    <div id="extraTools">
+     <button id="emojiBtn" type="button" title="Emoji">😀</button>
+     <button id="fileBtn" type="button" title="Document">📎</button>
+     <button id="photoBtn" type="button" title="Photo">📷</button>
+     <button id="audioBtn" type="button" title="Fichier audio">🎙️</button>
+     <button id="videoBtn" type="button" title="Vidéo">🎥</button>
+    </div>
+    <input type="file" id="fileInput" hidden>
+    <input type="file" id="photoInput" accept="image/*" hidden>
+    <input type="file" id="audioInput" accept="audio/*" hidden>
+    <input type="file" id="videoInput" accept="video/*" hidden>
+    <form id="sendbar">
+     <textarea id="messageInput" placeholder="Écrire un message..." maxlength="5000" rows="1"></textarea>
+     <button id="sendBtn" type="submit" aria-label="Envoyer">➤</button>
+    </form>
+   </div>
+  </section>
+ </div>
+</section>
+
+<script>
+"use strict";
+
+const SUPABASE_URL = "https://jwcrxijwqldrqcdnqbji.supabase.co";
+const SUPABASE_KEY = "sb_publishable_XZMtGlBdoca4TVZEUrWgbw_Hotuw_uD";
+const BUCKET = "dlg-files";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = id => document.getElementById(id);
+
+  
+let me = null, myProfile = null, people = [], selected = null;
+let currentTab = "chats", loadingPeople = false, replyMessage = null;
+let refreshTimer = null, messageBusy = false;
+
+  let groups = [];
+
+function say(id, text) { $(id).textContent = text || ""; }
+function errorText(e) { return e?.message || String(e || "Erreur inconnue"); }
+function initials(s) { return (s || "?").trim().charAt(0).toUpperCase(); }
+function timeText(s) {
+ return s ? new Date(s).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) : "";
+}
+function showApp() { $("auth").style.display="none"; $("app").style.display="block"; }
+function showAuth() { $("auth").style.display="block"; $("app").style.display="none"; }
+function escapeText(s) { return String(s || ""); }
+
+async function getMe() {
+ const {data,error} = await db.auth.getSession();
+ if(error) throw error;
+ me = data.session?.user || null;
+ return me;
+}
+
+async function login() {
+ const email=$("email").value.trim(), password=$("password").value;
+ if(!email || !password) return say("authMsg","Entrez votre email et votre mot de passe.");
+ say("authMsg","Connexion...");
+ const {data,error}=await db.auth.signInWithPassword({email,password});
+ if(error) return say("authMsg",errorText(error));
+ me=data.user;
+ await startApp();
+}
+
+async function signup() {
+ const email=$("email").value.trim(), password=$("password").value;
+ if(!email || password.length<6)
+  return say("authMsg","Entrez un email valide et un mot de passe de 6 caractères minimum.");
+ say("authMsg","Création du compte...");
+ const {data,error}=await db.auth.signUp({email,password});
+ if(error) return say("authMsg",errorText(error));
+ if(!data.session) {
+  say("authMsg","Compte créé. Vérifiez votre email si la confirmation est activée, puis connectez-vous.");
+  return;
+ }
+ me=data.user;
+ await startApp();
+}
+
+async function ensureProfile() {
+ const {data,error}=await db.from("dlg_profiles")
+  .select("user_id,username,full_name,created_at").eq("user_id",me.id).maybeSingle();
+ if(error) throw error;
+ if(data) { myProfile=data; return; }
+ const base=(me.email || "user").split("@")[0];
+ const {data:created,error:e}=await db.from("dlg_profiles").insert({
+  user_id:me.id, username:base+"_"+me.id.slice(0,5), full_name:base
+ }).select("user_id,username,full_name,created_at").single();
+ if(e) throw e;
+ myProfile=created;
+}
+async function markDeliveredMessages() {
+  if (!me || document.hidden) return;
+
+  const { data: memberships, error: memberError } =
+    await db.from("dlg_conversation_members")
+      .select("conversation_id")
+      .eq("user_id", me.id);
+
+  if (memberError) throw memberError;
+
+  const ids = [...new Set(
+    (memberships || []).map(x => x.conversation_id)
+  )];
+
+  if (!ids.length) return;
+
+  const { error } = await db.from("dlg_messages")
+    .update({ delivered_at: new Date().toISOString() })
+    .in("conversation_id", ids)
+    .neq("sender_id", me.id)
+    .is("delivered_at", null);
+
+  if (error) {
+    console.warn("Confirmation de réception :", error.message);
+  }
+}
+
+
+
+
+  
+async function startApp() {
+ try {
+  showApp();
+  say("status","Chargement du profil...");
+  await ensureProfile();
+  await loadPeople();
+  if(refreshTimer) clearInterval(refreshTimer);
+
+
+refreshTimer = setInterval(async () => {
+  if (!me || document.hidden) return;
+
+  try {
+    await markDeliveredMessages();
+    await loadPeople(true);
+
+    if (selected) {
+      await loadMessages(true);
+    }
+  } catch (e) {
+    console.warn("Actualisation :", e.message);
+  }
+}, 6000);
+
+
+  
+ } catch(e) { say("status","Erreur : "+errorText(e)); }
+}
+
+/* Contacts et conversations existantes */
+
+
+/* Contacts, discussions et groupes */
+async function loadPeople(silent = false) {
+  if (!me || loadingPeople) return;
+
+  loadingPeople = true;
+
+  if (!silent) say("status", "Chargement...");
+
+  try {
+    // 1. Charger les profils des autres utilisateurs
+    const { data: profiles, error: profileError } =
+      await db.from("dlg_profiles")
+        .select("user_id,username,full_name,created_at")
+        .neq("user_id", me.id)
+        .order("full_name")
+        .limit(200);
+
+    if (profileError) throw profileError;
+
+    // 2. Charger mes conversations
+    const { data: memberships, error: memberError } =
+      await db.from("dlg_conversation_members")
+        .select("conversation_id,user_id")
+        .eq("user_id", me.id);
+
+    if (memberError) throw memberError;
+
+    const ids = [
+      ...new Set((memberships || []).map(x => x.conversation_id))
+    ];
+
+    let allMembers = [];
+    let last = {};
+    let groupIds = new Set();
+
+    if (ids.length) {
+      // Membres des conversations
+      const { data: members, error: membersError } =
+        await db.from("dlg_conversation_members")
+          .select("conversation_id,user_id")
+          .in("conversation_id", ids);
+
+      if (membersError) throw membersError;
+
+      allMembers = members || [];
+
+      // Identifier les groupes
+      const { data: conversations, error: convError } =
+        await db.from("dlg_conversations")
+          .select("id,is_group")
+          .in("id", ids);
+
+      if (convError) throw convError;
+
+      groupIds = new Set(
+        (conversations || [])
+          .filter(c => c.is_group === true)
+          .map(c => c.id)
+      );
+
+      // Derniers messages
+      const { data: msgs, error: msgError } =
+        await db.from("dlg_messages")
+          .select(
+            "conversation_id,body,sender_id,created_at,message_type"
+          )
+          .in("conversation_id", ids)
+          .order("created_at", { ascending: false })
+          .limit(300);
+
+      if (msgError) throw msgError;
+
+      for (const m of msgs || []) {
+        if (!last[m.conversation_id]) {
+          last[m.conversation_id] = m;
+        }
+      }
+    }
+
+    // 3. Charger les groupes
+    await loadGroups();
+
+    // 4. Associer chaque contact à sa conversation privée
+    const convByUser = new Map();
+
+    for (const member of allMembers) {
+      if (
+        member.user_id === me.id ||
+        groupIds.has(member.conversation_id)
+      ) continue;
+
+      if (!convByUser.has(member.user_id)) {
+        convByUser.set(
+          member.user_id,
+          member.conversation_id
+        );
+      }
+    }
+
+    // 5. Construire la liste des contacts
+    people = (profiles || []).map(p => {
+      const conversationId = convByUser.get(p.user_id) || null;
+      const m = conversationId ? last[conversationId] : null;
+
+      return {
+        id: p.user_id,
+        name: p.full_name || p.username || "Utilisateur",
+        username: p.username || "",
+        conversationId,
+        preview: m
+          ? (
+              (m.sender_id === me.id ? "Vous : " : "") +
+              (
+                m.message_type === "text"
+                  ? (m.body || "")
+                  : "📎 Pièce jointe"
+              )
+            )
+          : "Démarrer une discussion"
+      };
+    });
+
+    // 6. Afficher les contacts, discussions ou groupes
+    renderPeople();
+
+    if (!silent) {
+      if (currentTab === "groups") {
+        say(
+          "status",
+          groups.length ? "" : "Aucun groupe pour le moment."
+        );
+      } else {
+        say(
+          "status",
+          people.length
+            ? ""
+            : "Aucun autre profil trouvé. Créez un deuxième compte pour tester."
+        );
+      }
+    }
+
+  } catch (e) {
+    say("status", "Erreur : " + errorText(e));
+    console.error("loadPeople:", e);
+  } finally {
+    loadingPeople = false;
+  }
+}
+
+  
+
+
+async function loadGroups() {
+  if (!me) return;
+
+  const { data: memberships, error: mErr } =
+    await db.from("dlg_conversation_members")
+      .select("conversation_id")
+      .eq("user_id", me.id);
+
+  if (mErr) throw mErr;
+
+  const ids = [...new Set(
+    (memberships || []).map(x => x.conversation_id)
+  )];
+
+  if (!ids.length) {
+    groups = [];
+    return;
+  }
+
+  const { data, error } = await db.from("dlg_conversations")
+    .select("id,name,avatar_url,created_by,is_group")
+    .in("id", ids)
+    .eq("is_group", true)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  groups = data || [];
+}
+
+async function createGroup() {
+  if (!me) return;
+
+  if (!people.length) {
+    alert("Il faut d'abord avoir d'autres utilisateurs inscrits.");
+    return;
+  }
+
+  const name = prompt("Nom du groupe :");
+  if (name === null || !name.trim()) return;
+
+  const choices = people.map((p, i) =>
+    `${i + 1}. ${p.name} (@${p.username})`
+  ).join("\n");
+
+  const answer = prompt(
+    "Entrez les numéros des membres, séparés par des virgules.\n\n" +
+    choices + "\n\nExemple : 1,2"
+  );
+
+  if (answer === null) return;
+
+  const memberIds = [...new Set(
+    answer.split(",")
+      .map(x => Number(x.trim()))
+      .filter(n => Number.isInteger(n) && n >= 1 && n <= people.length)
+      .map(n => people[n - 1].id)
+      .filter(id => id !== me.id)
+  )];
+
+  try {
+    say("status", "Création du groupe...");
+
+    const { data, error } = await db.rpc("dlg_create_group", {
+      p_name: name.trim(),
+      p_member_ids: memberIds
+    });
+
+    if (error) throw error;
+
+    const conversationId = typeof data === "string" ? data : data?.id;
+    if (!conversationId) {
+      throw new Error("Identifiant du groupe introuvable.");
+    }
+
+    await loadGroups();
+    renderPeople();
+
+    const group = groups.find(g => g.id === conversationId);
+    if (group) {
+      await openChat({
+        id: group.id,
+        name: group.name,
+        username: "",
+        conversationId: group.id,
+        isGroup: true
+      });
+    }
+
+    say("status", "");
+  } catch (e) {
+    alert("Impossible de créer le groupe : " + errorText(e));
+    say("status", "");
+  }
+}
+
+
+
+  
+
+function renderPeople() {
+ const q=$("searchInput").value.toLowerCase().trim();
+ const list=$("peopleList");
+ list.replaceChildren();
+
+
+if(currentTab==="groups") {
+  const createBtn = document.createElement("button");
+  createBtn.textContent = "+ Créer un groupe";
+  createBtn.className = "primary";
+  createBtn.style.margin = "10px";
+  createBtn.style.width = "calc(100% - 20px)";
+  createBtn.onclick = createGroup;
+  list.append(createBtn);
+
+  if (!groups.length) {
+    const empty = document.createElement("div");
+    empty.className = "notice";
+    empty.textContent = "Aucun groupe. Créez votre premier groupe.";
+    list.append(empty);
+    return;
+  }
+
+  for (const g of groups) {
+    const item = document.createElement("div");
+    item.className = "person";
+
+    const av = document.createElement("div");
+    av.className = "avatar";
+    av.textContent = "👥";
+
+    const info = document.createElement("div");
+    info.className = "info";
+
+    const name = document.createElement("strong");
+    name.textContent = g.name || "Groupe sans nom";
+
+    const preview = document.createElement("small");
+    preview.textContent = "Groupe Dialogue";
+
+    info.append(name, preview);
+    item.append(av, info);
+
+    item.onclick = () => openChat({
+      id: g.id,
+      name: g.name || "Groupe",
+      username: "",
+      conversationId: g.id,
+      isGroup: true
+    });
+
+    list.append(item);
+  }
+  return;
+}
+
+  
+
+ let arr=people.filter(p=>(p.name+" "+p.username).toLowerCase().includes(q));
+ if(currentTab==="chats") arr=arr.filter(p=>p.conversationId);
+
+ if(!arr.length) {
+  list.innerHTML='<div class="notice">'+
+   (currentTab==="chats"?"Aucune discussion. Ouvrez Contacts pour commencer.":"Aucun contact trouvé.")+
+   '</div>';
+  return;
+ }
+
+ for(const p of arr) {
+  const item=document.createElement("div"); item.className="person";
+  const av=document.createElement("div"); av.className="avatar"; av.textContent=initials(p.name);
+  const info=document.createElement("div"); info.className="info";
+  const name=document.createElement("strong"); name.textContent=p.name;
+  const prev=document.createElement("small"); prev.textContent=p.preview;
+  info.append(name,prev); item.append(av,info);
+  item.onclick=()=>openChat(p); list.append(item);
+ }
+}
+
+async function openChat(p) {
+ selected=p;
+ $("chatname").textContent=p.name;
+ $("chatAvatar").textContent=initials(p.name);
+ $("chatstatus").textContent=p.username ? "@"+p.username : "Dialogue";
+ $("messages").replaceChildren();
+ $("messages").innerHTML='<div class="empty">Chargement des messages...</div>';
+
+ if(innerWidth<650) {
+  $("people").style.display="none";
+  $("chat").style.display="flex";
+  $("backBtn").style.display="block";
+ }
+
+ try {
+  if(!p.conversationId) {
+   say("status","Ouverture de la discussion...");
+   const {data,error}=await db.rpc("dlg_start_conversation",{p_other_user_id:p.id});
+   if(error) throw error;
+   p.conversationId=typeof data==="string" ? data : data?.id;
+   if(!p.conversationId) throw new Error("La fonction n'a pas retourné l'identifiant de la conversation.");
+   selected=p;
+  }
+  await loadMessages();
+  await loadPeople(true);
+ } catch(e) {
+  $("messages").replaceChildren();
+  const box=document.createElement("div"); box.className="empty";
+  box.textContent="Impossible d'ouvrir la discussion : "+errorText(e);
+  $("messages").append(box);
+ }
+}
+
+async function getAttachmentMap(ids) {
+ if(!ids.length) return new Map();
+ const {data,error}=await db.from("dlg_attachments")
+  .select("message_id,file_name,mime_type,file_size_bytes,storage_path")
+  .in("message_id",ids);
+ if(error) throw error;
+ const map=new Map();
+ for(const f of data||[]) map.set(f.message_id,f);
+ return map;
+}
+
+/* Messages, fichiers, réactions et reçus */
+async function loadMessages(silent=false) {
+ const chat=selected;
+ if(!chat?.conversationId || !me) return;
+
+ const {data:msgs,error}=await db.from("dlg_messages")
+  
+
+.select("id,conversation_id,sender_id,body,message_type,created_at,delivered_at,read_at,reply_to")
+
+
+  
+  .eq("conversation_id",chat.conversationId)
+  .order("created_at",{ascending:true}).limit(200);
+ if(error) throw error;
+ if(selected!==chat) return;
+
+ const ids=(msgs||[]).map(m=>m.id);
+ const files=await getAttachmentMap(ids);
+ const area=$("messages");
+ area.replaceChildren();
+
+ if(!msgs?.length) {
+  area.innerHTML='<div class="empty">Aucun message. Envoyez le premier !</div>';
+  return;
+ }
+
+ for(const m of msgs) {
+  const bubble=document.createElement("div");
+  bubble.className="bubble"+(m.sender_id===me.id?" mine":"");
+
+const body = document.createElement("div");
+const attachment = files.get(m.id);
+
+// Kwerekana ubutumwa umuntu ariko arishura
+if (m.reply_to) {
+  const original = (msgs || []).find(x => x.id === m.reply_to);
+  const quote = document.createElement("div");
+  quote.className = "replyquote";
+
+  if (original) {
+    quote.textContent =
+      "↩ Réponse à : " +
+      ((original.body || "Pièce jointe").slice(0, 120));
+  } else {
+    quote.textContent = "↩ Réponse à un message";
+  }
+
+  bubble.append(quote);
+}
+
+   
+
+  if(attachment) {
+   const {data:signed,error:signErr}=await db.storage.from(BUCKET)
+    .createSignedUrl(attachment.storage_path,3600);
+   if(signErr) {
+    body.textContent=attachment.file_name+" — fichier inaccessible";
+   } else {
+    const url=signed.signedUrl, mime=attachment.mime_type||"";
+    if(mime.startsWith("image/")) {
+     const img=document.createElement("img");
+     img.src=url; img.alt=attachment.file_name; img.loading="lazy";
+     bubble.append(img);
+    } else if(mime.startsWith("video/")) {
+     const video=document.createElement("video");
+     video.src=url; video.controls=true; video.preload="none"; video.playsInline=true;
+     bubble.append(video);
+    } else if(mime.startsWith("audio/")) {
+     const audio=document.createElement("audio");
+     audio.src=url; audio.controls=true; audio.preload="none";
+     bubble.append(audio);
+    }
+    const link=document.createElement("a");
+    link.href=url; link.target="_blank"; link.rel="noopener";
+    link.textContent="📎 "+attachment.file_name;
+    link.style.display="block";
+    body.append(link);
+   }
+  } else {
+   body.textContent=m.body||"";
+  }
+
+  bubble.append(body);
+
+const time = document.createElement("time");
+time.style.display = "block";
+time.style.textAlign = "right";
+time.style.fontSize = "10px";
+time.style.marginTop = "5px";
+time.style.color = "#667781";
+
+time.textContent = timeText(m.created_at);
+
+if (m.sender_id === me.id) {
+  const receipt = document.createElement("span");
+  receipt.style.marginLeft = "5px";
+  receipt.style.fontWeight = "bold";
+
+  if (m.read_at) {
+    receipt.textContent = "✓✓";
+    receipt.style.color = "#00a884";
+    receipt.title = "Lu à " + timeText(m.read_at);
+  } else if (m.delivered_at) {
+    receipt.textContent = "✓✓";
+    receipt.style.color = "#667781";
+    receipt.title = "Reçu à " + timeText(m.delivered_at);
+  } else {
+    receipt.textContent = "✓";
+    receipt.style.color = "#667781";
+    receipt.title = "Envoyé à " + timeText(m.created_at);
+  }
+
+  time.append(receipt);
+}
+
+bubble.append(time);
+
+
+   
+
+  const tools=document.createElement("div"); tools.className="msgtools";
+  const reply=document.createElement("button"); reply.type="button"; reply.textContent="↩ Répondre";
+  reply.onclick=()=> {
+   replyMessage=m;
+   $("replyText").textContent="Réponse à : "+(m.body||"Pièce jointe").slice(0,100);
+   $("replyBox").hidden=false;
+   $("messageInput").focus();
+  };
+  const react=document.createElement("button"); react.type="button"; react.textContent="❤️";
+  react.onclick=async()=>{
+   const reaction=prompt("Choisissez une réaction : ❤️ 👍 😂 😮 😢 🙏","❤️");
+   if(!reaction) return;
+   try {
+    const {error}=await db.from("dlg_message_reactions").upsert({
+     message_id:m.id,user_id:me.id,reaction:reaction.trim().slice(0,16)
+    },{onConflict:"message_id,user_id"});
+    if(error) throw error;
+    alert("Réaction enregistrée.");
+   } catch(e) { alert("Réaction non enregistrée : "+errorText(e)); }
+  };
+  tools.append(reply,react); bubble.append(tools);
+  area.append(bubble);
+ }
+
+ area.scrollTop=area.scrollHeight;
+
+ // Marquer les messages reçus comme lus, si les policies le permettent.
+ const unread=(msgs||[]).filter(m=>m.sender_id!==me.id&&!m.read_at).map(m=>m.id);
+ if(unread.length) {
+  const {error}=await db.from("dlg_messages").update({read_at:new Date().toISOString()})
+   .in("id",unread).neq("sender_id",me.id);
+  if(error) console.warn("Reçus de lecture à configurer :",error.message);
+ }
+}
+
+/* Envoyer un message texte */
+$("sendbar").addEventListener("submit",async e=>{
+ e.preventDefault();
+ const text=$("messageInput").value.trim();
+ if(!text || !selected?.conversationId || !me || messageBusy) return;
+ messageBusy=true; $("sendBtn").disabled=true;
+ try {
+  let body=text;
+  
+
+const {error} = await db.from("dlg_messages").insert({
+  conversation_id: selected.conversationId,
+  sender_id: me.id,
+  body: body,
+  message_type: "text",
+  reply_to: replyMessage ? replyMessage.id : null
+});
+
+
+   
+  if(error) throw error;
+  $("messageInput").value="";
+  $("messageInput").style.height="46px";
+  replyMessage=null; $("replyBox").hidden=true;
+  $("emojiPanel").hidden=true;
+  await loadMessages();
+  await loadPeople(true);
+ } catch(e) { alert("Échec de l'envoi : "+errorText(e)); }
+ finally { messageBusy=false; $("sendBtn").disabled=false; $("messageInput").focus(); }
+});
+
+/* Fichiers : 20 MB maximum par fichier */
+async function sendAttachment(file) {
+ if(!me || !selected?.conversationId) {
+  alert("Banza ufungure discussion."); return;
+ }
+ if(file.size>20*1024*1024) {
+  alert("Fichier irengeje 20 MB."); return;
+ }
+ const chat=selected;
+ const type=file.type.startsWith("image/")?"image":
+  file.type.startsWith("video/")?"video":
+  file.type.startsWith("audio/")?"audio":"file";
+ $("chatstatus").textContent="Envoi du fichier...";
+ ["fileBtn","photoBtn","audioBtn","videoBtn"].forEach(id=>$(id).disabled=true);
+
+ let messageId=null, path=null;
+ try {
+  const {data:msg,error:msgError}=await db.from("dlg_messages").insert({
+   conversation_id:chat.conversationId,sender_id:me.id,
+   body:file.name,message_type:type
+  }).select("id").single();
+  if(msgError) throw msgError;
+  messageId=msg.id;
+
+  const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_").slice(-100);
+  path=chat.conversationId+"/"+messageId+"_"+safeName;
+
+  const {error:upError}=await db.storage.from(BUCKET).upload(path,file,{
+   contentType:file.type||"application/octet-stream",upsert:false
+  });
+  if(upError) throw upError;
+
+  const {error:attError}=await db.from("dlg_attachments").insert({
+   message_id:messageId,uploaded_by:me.id,file_name:file.name,
+   mime_type:file.type||"application/octet-stream",
+   file_size_bytes:file.size,storage_path:path
+  });
+  if(attError) throw attError;
+
+  $("chatstatus").textContent="Connecté";
+  if(selected===chat) await loadMessages();
+  await loadPeople(true);
+ } catch(e) {
+  console.error(e);
+  alert("Erreur d'envoi : "+errorText(e)+
+   "\nVérifiez le bucket dlg-files, ses policies et les colonnes de dlg_attachments.");
+  $("chatstatus").textContent="Erreur d'envoi";
+ } finally {
+  ["fileBtn","photoBtn","audioBtn","videoBtn"].forEach(id=>$(id).disabled=false);
+ }
+}
+
+$("fileBtn").onclick=()=>$("fileInput").click();
+$("photoBtn").onclick=()=>$("photoInput").click();
+$("audioBtn").onclick=()=>$("audioInput").click();
+$("videoBtn").onclick=()=>$("videoInput").click();
+
+["fileInput","photoInput","audioInput","videoInput"].forEach(id=>{
+ $(id).addEventListener("change",async()=>{
+  const file=$(id).files?.[0];
+  if(file) await sendAttachment(file);
+  $(id).value="";
+ });
+});
+
+/* Emoji et saisie multi-lignes */
+$("emojiBtn").onclick=()=>$("emojiPanel").hidden=!$("emojiPanel").hidden;
+$("emojiPanel").querySelectorAll("button").forEach(btn=>{
+ btn.onclick=()=>{
+  const el=$("messageInput"), start=el.selectionStart??el.value.length;
+  const end=el.selectionEnd??start, emoji=btn.textContent;
+  el.value=el.value.slice(0,start)+emoji+el.value.slice(end);
+  el.focus();
+  el.setSelectionRange(start+emoji.length,start+emoji.length);
+  el.dispatchEvent(new Event("input"));
+ };
+});
+$("messageInput").addEventListener("input",()=>{
+ const el=$("messageInput"); el.style.height="46px";
+ el.style.height=Math.min(el.scrollHeight,120)+"px";
+});
+$("messageInput").addEventListener("keydown",e=>{
+ if(e.key==="Enter"&&!e.shiftKey) {
+  e.preventDefault(); $("sendbar").requestSubmit();
+ }
+});
+$("cancelReply").onclick=()=>{
+ replyMessage=null; $("replyBox").hidden=true;
+};
+
+/* Boutons et navigation */
+$("loginBtn").onclick=login;
+$("signupBtn").onclick=signup;
+$("searchInput").addEventListener("input",renderPeople);
+$("menuBtn").onclick=()=>{
+ $("menu").style.display=$("menu").style.display==="block"?"none":"block";
+};
+$("refreshBtn").onclick=async()=>{
+ $("menu").style.display="none";
+ await loadPeople();
+ if(selected) try { await loadMessages(); } catch(e) { alert(errorText(e)); }
+};
+$("profileBtn").onclick=async()=>{
+ if(!me||!myProfile) return;
+ const name=prompt("Votre nom :",myProfile.full_name||"");
+ if(name===null||!name.trim()) return;
+ const {data,error}=await db.from("dlg_profiles").update({full_name:name.trim()})
+  .eq("user_id",me.id).select("user_id,username,full_name,created_at").single();
+ if(error) return alert(errorText(error));
+ myProfile=data; await loadPeople(true);
+ $("chatname").textContent=selected?.name||"Dialogue";
+};
+$("logoutBtn").onclick=async()=>{
+ if(refreshTimer) clearInterval(refreshTimer);
+ const {error}=await db.auth.signOut();
+ if(error) return alert(errorText(error));
+ me=null; selected=null; people=[]; myProfile=null;
+ showAuth();
+};
+$("backBtn").onclick=()=>{
+ $("people").style.display="block";
+ if(innerWidth<650) $("chat").style.display="none";
+ selected=null;
+};
+document.querySelectorAll(".tabs button").forEach(btn=>{
+ btn.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active"); currentTab=btn.dataset.tab; renderPeople();
+ };
+});
+window.addEventListener("resize",()=>{
+ if(innerWidth>=650) {
+  $("people").style.display="block";
+  $("chat").style.display="flex";
+ } else if(!selected) $("chat").style.display="none";
+});
+db.auth.onAuthStateChange((event,session)=>{
+ if(event==="SIGNED_OUT") {
+  me=null; selected=null;
+  if(refreshTimer) clearInterval(refreshTimer);
+  showAuth();
+ }
+});
+
+(async()=>{
+ try {
+  if(!SUPABASE_KEY.startsWith("sb_publishable_")) {
+   say("authMsg","Vérifiez la clé publique Supabase."); return;
+  }
+  await getMe();
+  if(me) await startApp();
+ } catch(e) { say("authMsg",errorText(e)); }
+})();
+</script>
+</body>
+</html>
